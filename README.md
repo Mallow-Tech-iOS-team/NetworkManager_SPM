@@ -14,23 +14,23 @@
 
 #### _Route_ 
 
-```plaintext
+```swift
 enum MyRouter: Routable {
-    case scheduleVideoCall
+    case route1
     
     var route: Route {
-        return Route(path: "https://l2videomvp1.miton.co.uk:5001/api/video/schedule",
-                     method: .post,
-                     headers: [
-                        .accept("application/json"),
-                     ])
+        switch self {
+        case .route1:
+            return Route(path: "https://domain.com/path",
+                         method: .post)    
+        }
     }
 }
 ```
 
 #### Network Setup
 
-```plaintext
+```swift
 
 class MyNetwork {
     static let shared: MTNetwork = MTNetwork(session: Session(configuration: .primaryConfiguration,
