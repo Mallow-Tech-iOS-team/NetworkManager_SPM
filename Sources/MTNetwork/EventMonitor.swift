@@ -14,6 +14,10 @@ import Foundation
 public class RequestEventMonitor: EventMonitor {
     public let queue = DispatchQueue(label: "com.mallow-tech.debug-event-monitor")
     
+    // MARK: - Initialisers
+    
+    public init() { }
+    
     // MARK: - Inherited Methods
     
     /// Listens to the request's starts or resumes event

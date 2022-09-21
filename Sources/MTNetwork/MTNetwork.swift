@@ -8,22 +8,21 @@
 import Alamofire
 import Foundation
 
-public protocol MTNetworkProtocol: InterceptorProtocol { }
-
 public class MTNetwork {
     var session: Session
+    /// Holds different encoders required for the MTNetwork to encode the request
     var requestEncoder: RequestEncoders
-    public weak var delegate: MTNetworkProtocol?
+    /// Decoder required for the MTNetwork to decode the request
+    var decoder: JSONDecoder
     
     // MARK: - Initialisers
     
-    public init(session: Session? = nil,
-                delegate: MTNetworkProtocol,
-                requestEncoder: RequestEncoders = RequestEncoders()) {
-        self.delegate = delegate
-        self.session = session ?? Session(interceptor: MTInterceptor(delegate: delegate),
-                                           eventMonitors: [RequestEventMonitor()])
+    public init(session: Session,
+                requestEncoder: RequestEncoders = RequestEncoders(),
+                decoder: JSONDecoder = JSONDecoder()) {
+        self.session = session
         self.requestEncoder = requestEncoder
+        self.decoder = decoder
     }
     
     public func request(_ router: Routable,
