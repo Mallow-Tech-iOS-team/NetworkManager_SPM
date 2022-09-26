@@ -35,7 +35,7 @@ public class MTInterceptor: RequestInterceptor {
                       for session: Session,
                       completion: @escaping (Result<URLRequest, Error>) -> Void) {
         var request = urlRequest
-        request.headers = commonHeaders() ?? []
+        commonHeaders().forEach { request.headers.add($0) }
         
         completion(.success(request))
     }
@@ -43,10 +43,8 @@ public class MTInterceptor: RequestInterceptor {
     public func retry(_ request: Request,
                       for session: Session,
                       dueTo error: Error,
-                      completion: @escaping (RetryResult) -> Void) {
-        Task {
-            await shouldRetry(request) ? completion(.retry) : completion(.doNotRetry)
-        }
+                      completion: @escaping (RetryResult) -> Void) async {
+        await shouldRetry(request) ? completion(.retry) : completion(.doNotRetry)
     }
     
     func shouldRetry(_ request: Request) async -> Bool {
@@ -67,8 +65,8 @@ public class MTInterceptor: RequestInterceptor {
         }
     }
     
-    func commonHeaders() -> HTTPHeaders? {
-        delegate?.commonHeaders()
+    func commonHeaders() -> HTTPHeaders {
+        delegate?.commonHeaders() ?? []
     }
 }
 
