@@ -25,6 +25,8 @@ public class MTNetwork {
         self.decoder = decoder
     }
     
+    // MARK: - Custom Methods
+    
     public func request(_ router: Routable,
                  parameters: Parameters) -> DataRequest {
         let route = router.route

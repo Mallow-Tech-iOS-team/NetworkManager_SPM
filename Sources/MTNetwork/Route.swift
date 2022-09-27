@@ -10,11 +10,11 @@ import Foundation
 
 /// Route holds the details of the API request
 public struct Route {
-    var path: URLConvertible
-    var method: HTTPMethod
-    var headers: HTTPHeaders?
-    var encoding: ParameterEncoding?
-    var encoder: ParameterEncoder?
+    public var path: URLConvertible
+    public var method: HTTPMethod
+    public var headers: HTTPHeaders?
+    public var encoding: ParameterEncoding?
+    public var encoder: ParameterEncoder?
     
     /// Create a Route using specified parameters
     /// - Parameters:

@@ -10,16 +10,14 @@ import Foundation
 
 public protocol InterceptorProtocol: AnyObject {
     func commonHeaders() -> HTTPHeaders
-    /// Handle the success logic and failure logic for token handling inside this methods (Like storing tokens on keychain during success or Logout during the failure)
+    /// Handle the success logic and failure logic for token handling inside this methods
+    /// (Like storing tokens on keychain during success or Logout during the failure)
     /// - Returns: return the result type
     func refreshTokens() async -> MTInterceptor.RefreshTokenStatus
     func cancelAllRequests()
 }
 
 public class MTInterceptor: RequestInterceptor {
-    public static let defaultRetryStatusCodes: Set<Int> = []
-    public static let defaultRetryLimit: Int = 2
-    public static let defaultDelayTime: TimeInterval = 2
     public private(set) var isTokenRefreshing: Bool = false
     public let retryLimit: Int
     public let retryStatusCodes: Set<Int>
@@ -27,15 +25,19 @@ public class MTInterceptor: RequestInterceptor {
     
     public weak var delegate: InterceptorProtocol?
     
-    public init(retryLimit: Int = defaultRetryLimit,
-                retryStatusCodes: Set<Int> = defaultRetryStatusCodes,
-                delayTime: TimeInterval = defaultDelayTime,
+    // MARK: - Initialisers
+    
+    public init(retryLimit: Int = 3, // Default retry limit is 3
+                retryStatusCodes: Set<Int> = [], // Default retry status code is []
+                delayTime: TimeInterval = 2, // Default retry delay time is 2
                 delegate: InterceptorProtocol) {
         self.retryLimit = retryLimit
         self.retryStatusCodes = retryStatusCodes
         self.delayTime = delayTime
         self.delegate = delegate
     }
+    
+    // MARK: - Inherited Methods
     
     public func adapt(_ urlRequest: URLRequest,
                       for session: Session,
@@ -57,6 +59,7 @@ public class MTInterceptor: RequestInterceptor {
 }
 
 extension MTInterceptor {
+    // MARK: - Custom Methods
     func shouldRetry(_ request: Request) async -> RetryResult {
         guard let statusCode = request.response?.statusCode,
               request.retryCount < retryLimit else {
@@ -104,6 +107,7 @@ extension MTInterceptor {
 }
 
 extension MTInterceptor {
+    // MARK: - Enumerations
     public enum RefreshTokenStatus {
         case success
         case failure

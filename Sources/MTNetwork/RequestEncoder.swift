@@ -8,7 +8,7 @@
 import Alamofire
 
 /// Holds different encoder types used in Network under single hood
-public class RequestEncoders {
+public struct RequestEncoders {
     let urlEncoding: URLEncoding
     let urlEncoder: URLEncodedFormParameterEncoder
     let jsonEncoding: JSONEncoding
