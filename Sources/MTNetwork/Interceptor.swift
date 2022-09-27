@@ -13,21 +13,27 @@ public protocol InterceptorProtocol: AnyObject {
     /// Handle the success logic and failure logic for token handling inside this methods (Like storing tokens on keychain during success or Logout during the failure)
     /// - Returns: return the result type
     func refreshTokens() async -> MTInterceptor.RefreshTokenStatus
+    func cancelAllRequests()
 }
 
 public class MTInterceptor: RequestInterceptor {
     public static let defaultRetryStatusCodes: Set<Int> = []
     public static let defaultRetryLimit: Int = 2
+    public static let defaultDelayTime: TimeInterval = 2
+    public private(set) var isTokenRefreshing: Bool = false
     public let retryLimit: Int
     public let retryStatusCodes: Set<Int>
+    public let delayTime: TimeInterval
     
     public weak var delegate: InterceptorProtocol?
     
     public init(retryLimit: Int = defaultRetryLimit,
                 retryStatusCodes: Set<Int> = defaultRetryStatusCodes,
+                delayTime: TimeInterval = defaultDelayTime,
                 delegate: InterceptorProtocol) {
         self.retryLimit = retryLimit
         self.retryStatusCodes = retryStatusCodes
+        self.delayTime = delayTime
         self.delegate = delegate
     }
     
@@ -44,29 +50,56 @@ public class MTInterceptor: RequestInterceptor {
                       for session: Session,
                       dueTo error: Error,
                       completion: @escaping (RetryResult) -> Void) async {
-        await shouldRetry(request) ? completion(.retry) : completion(.doNotRetry)
+        // FIXME: - Ensure the await is not channeling the request serially
+        let shouldRetry = await shouldRetry(request)
+        completion(shouldRetry)
     }
-    
-    func shouldRetry(_ request: Request) async -> Bool {
+}
+
+extension MTInterceptor {
+    func shouldRetry(_ request: Request) async -> RetryResult {
         guard let statusCode = request.response?.statusCode,
               request.retryCount < retryLimit else {
-            return false
+            return .doNotRetry
         }
         
         if let retry = RetryRequest(rawValue: statusCode) {
-            switch retry {
-                case .tokenFailure:
-                    return await delegate?.refreshTokens() == .success ? true : false
-            }
+            return await handleRetryRequests(retry)
         } else if retryStatusCodes.contains(statusCode) {
-            return true
+            return .retry
         } else {
-            return false
+            return .doNotRetry
         }
     }
     
     func commonHeaders() -> HTTPHeaders {
         delegate?.commonHeaders() ?? []
+    }
+    
+    func handleRetryRequests(_ retry: RetryRequest) async -> RetryResult {
+        switch retry {
+        case .tokenFailure:
+            return await handleTokenFailure()
+        }
+    }
+    
+    func handleTokenFailure() async -> RetryResult {
+        // FIXME: - Optimise the token refreshing logic
+        guard !isTokenRefreshing else {
+            return .retryWithDelay(delayTime)
+        }
+        isTokenRefreshing = true
+        let refreshTokenStatus = await delegate?.refreshTokens()
+        isTokenRefreshing = false
+        switch refreshTokenStatus {
+            case .success:
+                return .retry
+            case .failure:
+                delegate?.cancelAllRequests()
+                return .doNotRetry
+            case .none:
+                return .doNotRetry
+        }
     }
 }
 
