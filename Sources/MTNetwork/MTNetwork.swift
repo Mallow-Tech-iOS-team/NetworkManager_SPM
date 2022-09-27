@@ -11,9 +11,9 @@ import Foundation
 public class MTNetwork {
     public private(set) var session: Session
     /// Holds different encoders required for the MTNetwork to encode the request
-    var requestEncoder: RequestEncoders
+    public private(set) var requestEncoder: RequestEncoders
     /// Decoder required for the MTNetwork to decode the request
-    var decoder: JSONDecoder
+    public private(set) var decoder: JSONDecoder
     
     // MARK: - Initialisers
     
