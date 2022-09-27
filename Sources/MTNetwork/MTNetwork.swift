@@ -9,7 +9,7 @@ import Alamofire
 import Foundation
 
 public class MTNetwork {
-    var session: Session
+    public private(set) var session: Session
     /// Holds different encoders required for the MTNetwork to encode the request
     var requestEncoder: RequestEncoders
     /// Decoder required for the MTNetwork to decode the request
