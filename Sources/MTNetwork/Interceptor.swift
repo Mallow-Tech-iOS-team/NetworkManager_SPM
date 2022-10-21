@@ -23,7 +23,7 @@ public class MTInterceptor: RequestInterceptor {
     public let retryStatusCodes: Set<Int>
     public let delayTime: TimeInterval
     
-    public weak var delegate: InterceptorProtocol?
+    public var delegate: InterceptorProtocol
     
     // MARK: - Initialisers
     
@@ -76,7 +76,7 @@ extension MTInterceptor {
     }
     
     func commonHeaders() -> HTTPHeaders {
-        delegate?.commonHeaders() ?? []
+        delegate.commonHeaders()
     }
     
     func handleRetryRequests(_ retry: RetryRequest) async -> RetryResult {
@@ -92,15 +92,13 @@ extension MTInterceptor {
             return .retryWithDelay(delayTime)
         }
         isTokenRefreshing = true
-        let refreshTokenStatus = await delegate?.refreshTokens()
+        let refreshTokenStatus = await delegate.refreshTokens()
         isTokenRefreshing = false
         switch refreshTokenStatus {
             case .success:
                 return .retry
             case .failure:
-                delegate?.cancelAllRequests()
-                return .doNotRetry
-            case .none:
+                delegate.cancelAllRequests()
                 return .doNotRetry
         }
     }
