@@ -43,7 +43,11 @@ public class MTInterceptor: RequestInterceptor {
                       for session: Session,
                       completion: @escaping (Result<URLRequest, Error>) -> Void) {
         var request = urlRequest
-        commonHeaders().forEach { request.headers.add($0) }
+        
+        // Add common headers and over-write common headers keys with Current Header Keys if Repeated
+        var headers = commonHeaders()
+        request.headers.forEach { headers.add($0) }
+        request.headers = headers
         
         completion(.success(request))
     }

@@ -8,7 +8,7 @@
 import Alamofire
 import Foundation
 
-public class MTNetwork {
+open class MTNetwork {
     public private(set) var session: Session
     /// Holds different encoders required for the MTNetwork to encode the request
     public private(set) var requestEncoder: RequestEncoders
@@ -26,9 +26,9 @@ public class MTNetwork {
     }
     
     // MARK: - Custom Methods
-    
+
     public func request(_ router: Routable,
-                 parameters: Parameters) -> DataRequest {
+                 parameters: Parameters? = nil) -> DataRequest {
         let route = router.route
         // Using URLEncoding for GET request and JSONEncoding for other requests
         let encoder: ParameterEncoding = (route.method == .get) ? requestEncoder.urlEncoding : requestEncoder.jsonEncoding
