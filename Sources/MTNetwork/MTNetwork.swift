@@ -28,7 +28,7 @@ open class MTNetwork {
     // MARK: - Custom Methods
 
     public func request(_ router: Routable,
-                 parameters: Parameters? = nil) -> DataRequest {
+                        parameters: Parameters? = nil) -> DataRequest {
         let route = router.route
         // Using URLEncoding for GET request and JSONEncoding for other requests
         let encoder: ParameterEncoding = (route.method == .get) ? requestEncoder.urlEncoding : requestEncoder.jsonEncoding

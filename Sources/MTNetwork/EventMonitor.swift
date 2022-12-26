@@ -21,15 +21,8 @@ public class RequestEventMonitor: EventMonitor {
     // MARK: - Inherited Methods
     
     /// Listens to the request's starts or resumes event
-    public func requestDidResume(_ request: Request) {
-        print("⚡️ URL: \(request.description)")
-        print("⚡️ Request Headers: \(request.request?.allHTTPHeaderFields?.debugDescription ?? "")")
-        if let data = request.request?.httpBody {
-            let body = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)
-            print("⚡️ Request Body: \(String(describing: body))")
-        } else {
-            print("⚡️ Request Body: NIL")
-        }
+    public func request(_ request: Request, didResumeTask task: URLSessionTask) {
+        print("📍 Request Order: ", request.description)
     }
     
     /// Listens to the request's Data Metrics
@@ -38,9 +31,22 @@ public class RequestEventMonitor: EventMonitor {
         print("⏱ Request Duration: ", metrics.taskInterval)
     }
     
+    public func requestDidCancel(_ request: Request) {
+        print("🚫 Request Cancelled - \(request.description)")
+    }
+    
     /// Starts off when the request is completed
     public func request<Value>(_ request: DataRequest,
                         didParseResponse response: DataResponse<Value, AFError>) {
+        print("⚡️ URL: \(request.description)")
+        print("⚡️ Request Headers: \(request.request?.allHTTPHeaderFields?.debugDescription ?? "NIL")")
+        if let data = request.request?.httpBody {
+            let body = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)
+            print("⚡️ Request Body: \(String(describing: body))")
+        } else {
+            print("⚡️ Request Body: NIL")
+        }
+        
         if let data = response.data {
             print("✅ Response Headers: \(request.response?.allHeaderFields.debugDescription ?? "")")
             if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
