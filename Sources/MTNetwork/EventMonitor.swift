@@ -53,6 +53,7 @@ public class RequestEventMonitor: EventMonitor {
                 print("✅ Success Response: \(json)")
             } else {
                 print("✅❌ Success Response: Json Parsing failed")
+                print(String(data: data, encoding: .utf8) ?? "No Data Found")
             }
         }
         

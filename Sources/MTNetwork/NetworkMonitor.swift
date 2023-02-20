@@ -22,13 +22,17 @@ extension NWInterface.InterfaceType: CaseIterable {
     ]
 }
 
-public class NetworkMonitor {
+public final class NetworkMonitor: ObservableObject {
     public static let shared = NetworkMonitor()
     
     private let queue = DispatchQueue(label: "NetworkConnectivityMonitor")
     private let monitor: NWPathMonitor
     
-    public private(set) var isConnected = false
+    public private(set) var isConnected = false {
+        didSet {
+            print("🗼 Network Connected -- ", isConnected)
+        }
+    }
     public private(set) var isExpensive = false
     public private(set) var currentConnectionType: NWInterface.InterfaceType?
     
