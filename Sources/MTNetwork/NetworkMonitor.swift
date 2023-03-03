@@ -8,6 +8,7 @@
 import Foundation
 import Network
 
+// MARK: - Extension
 extension Notification.Name {
     public static let connectivityStatus = Notification.Name(rawValue: "connectivityStatusChanged")
 }
@@ -22,7 +23,18 @@ extension NWInterface.InterfaceType: CaseIterable {
     ]
 }
 
-public final class NetworkMonitor: ObservableObject {
+// MARK: - Protocol
+public protocol NetworkMonitorProtocol {
+    var isConnected: Bool { get }
+    var isExpensive: Bool { get }
+    var currentConnectionType: NWInterface.InterfaceType? { get }
+    
+    func startMonitoring()
+    func stopMonitoring()
+}
+
+// MARK: - Network Monitor
+public final class NetworkMonitor: ObservableObject, NetworkMonitorProtocol {
     public static let shared = NetworkMonitor()
     
     private let queue = DispatchQueue(label: "NetworkConnectivityMonitor")

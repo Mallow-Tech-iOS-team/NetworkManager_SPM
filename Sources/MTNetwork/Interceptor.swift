@@ -55,10 +55,11 @@ public class MTInterceptor: RequestInterceptor {
     public func retry(_ request: Request,
                       for session: Session,
                       dueTo error: Error,
-                      completion: @escaping (RetryResult) -> Void) async {
-        // FIXME: - Ensure the await is not channeling the request serially
-        let shouldRetry = await shouldRetry(request)
-        completion(shouldRetry)
+                      completion: @escaping (RetryResult) -> Void) {
+        Task {
+            let shouldRetry = await shouldRetry(request)
+            completion(shouldRetry)
+        }
     }
 }
 

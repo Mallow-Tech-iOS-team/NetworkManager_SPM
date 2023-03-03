@@ -14,20 +14,24 @@ open class MTNetwork {
     public private(set) var requestEncoder: RequestEncoders
     /// Decoder required for the MTNetwork to decode the request
     public private(set) var decoder: JSONDecoder
-    public private(set) var networkMonitor: NetworkMonitor
+    public private(set) var networkMonitor: NetworkMonitorProtocol
     
     // MARK: - Initialisers
     
     public init(session: Session,
                 requestEncoder: RequestEncoders = RequestEncoders(),
                 decoder: JSONDecoder = JSONDecoder(),
-                networkMonitor: NetworkMonitor = .shared) {
+                networkMonitor: some NetworkMonitorProtocol = NetworkMonitor.shared) {
         self.session = session
         self.requestEncoder = requestEncoder
         self.decoder = decoder
         self.networkMonitor = networkMonitor
         
         networkMonitor.startMonitoring()
+    }
+    
+    deinit {
+        networkMonitor.stopMonitoring()
     }
     
     // MARK: - Custom Methods

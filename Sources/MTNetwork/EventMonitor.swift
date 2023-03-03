@@ -41,19 +41,21 @@ public class RequestEventMonitor: EventMonitor {
         print("⚡️ URL: \(request.description)")
         print("⚡️ Request Headers: \(request.request?.allHTTPHeaderFields?.debugDescription ?? "NIL")")
         if let data = request.request?.httpBody {
-            let body = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers)
-            print("⚡️ Request Body: \(String(describing: body))")
+            if let body = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
+                print("⚡️ Request Body: \(String(describing: body))")
+            } else if let bodyParams = String(data: data, encoding: .utf8) {
+                print("⚡️ Request Body: \(bodyParams)")
+            }
         } else {
             print("⚡️ Request Body: NIL")
         }
         
         if let data = response.data {
             print("✅ Response Headers: \(request.response?.allHeaderFields.debugDescription ?? "")")
-            if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) {
-                print("✅ Success Response: \(json)")
+            if let response = String(data: data, encoding: .utf8) {
+                print("✅ Success Response: \(response)")
             } else {
-                print("✅❌ Success Response: Json Parsing failed")
-                print(String(data: data, encoding: .utf8) ?? "No Data Found")
+                print("✅❌ Data Found, but failed converting String")
             }
         }
         
