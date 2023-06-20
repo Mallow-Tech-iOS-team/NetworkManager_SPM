@@ -9,6 +9,8 @@ import Alamofire
 import Foundation
 
 public protocol InterceptorProtocol: AnyObject {
+    var tokenRefreshHttpsCodes: Set<Int> { get }
+    
     func commonHeaders() -> HTTPHeaders
     /// Handle the success logic and failure logic for token handling inside this methods
     /// (Like storing tokens on keychain during success or Logout during the failure)
@@ -56,7 +58,9 @@ public class MTInterceptor: RequestInterceptor {
                       for session: Session,
                       dueTo error: Error,
                       completion: @escaping (RetryResult) -> Void) {
-        Task {
+        // Some of the logics in shouldRetry->handleRetryRequests->handleTokenFailure->delegate.refreshTokens
+        // is expected to be executed in main thread
+        Task { @MainActor in
             let shouldRetry = await shouldRetry(request)
             completion(shouldRetry)
         }
@@ -71,8 +75,8 @@ extension MTInterceptor {
             return .doNotRetry
         }
         
-        if let retry = RetryRequest(rawValue: statusCode) {
-            return await handleRetryRequests(retry)
+        if delegate.tokenRefreshHttpsCodes.contains(statusCode) {
+            return await handleTokenFailure()
         } else if retryStatusCodes.contains(statusCode) {
             return .retry
         } else {
@@ -84,13 +88,7 @@ extension MTInterceptor {
         delegate.commonHeaders()
     }
     
-    func handleRetryRequests(_ retry: RetryRequest) async -> RetryResult {
-        switch retry {
-        case .tokenFailure:
-            return await handleTokenFailure()
-        }
-    }
-    
+    @MainActor
     func handleTokenFailure() async -> RetryResult {
         // FIXME: - Optimise the token refreshing logic
         guard !isTokenRefreshing else {
@@ -114,10 +112,6 @@ extension MTInterceptor {
     public enum RefreshTokenStatus {
         case success
         case failure
-    }
-    
-    public enum RetryRequest: Int, CaseIterable {
-        case tokenFailure = 401
     }
 }
 
