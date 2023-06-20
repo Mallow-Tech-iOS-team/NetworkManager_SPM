@@ -8,6 +8,10 @@
 import Alamofire
 import Foundation
 
+struct Constant {
+    static let monitorNetworkArgument = "-MTMonitorRequest"
+}
+
 // MARK: - Request Event Monitor
 
 /// Use this event monitor to listen to the requests data, response, metrics, etc
@@ -22,22 +26,26 @@ public class RequestEventMonitor: EventMonitor {
     
     /// Listens to the request's starts or resumes event
     public func request(_ request: Request, didResumeTask task: URLSessionTask) {
+        guard CommandLine.arguments.contains(Constant.monitorNetworkArgument) else { return }
         print("📍 Request Order: ", request.description)
     }
     
     /// Listens to the request's Data Metrics
     public func request(_ request: Request,
                  didGatherMetrics metrics: URLSessionTaskMetrics) {
+        guard CommandLine.arguments.contains(Constant.monitorNetworkArgument) else { return }
         print("⏱ Request Duration: ", metrics.taskInterval)
     }
     
     public func requestDidCancel(_ request: Request) {
+        guard CommandLine.arguments.contains(Constant.monitorNetworkArgument) else { return }
         print("🚫 Request Cancelled - \(request.description)")
     }
     
     /// Starts off when the request is completed
     public func request<Value>(_ request: DataRequest,
                         didParseResponse response: DataResponse<Value, AFError>) {
+        guard CommandLine.arguments.contains(Constant.monitorNetworkArgument) else { return }
         print("⚡️ URL: \(request.description)")
         print("⚡️ Request Headers: \(request.request?.allHTTPHeaderFields?.debugDescription ?? "NIL")")
         if let data = request.request?.httpBody {

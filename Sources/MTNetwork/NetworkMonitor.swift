@@ -42,6 +42,7 @@ public final class NetworkMonitor: ObservableObject, NetworkMonitorProtocol {
     
     public private(set) var isConnected = false {
         didSet {
+            guard CommandLine.arguments.contains(Constant.monitorNetworkArgument) else { return }
             print("🗼 Network Connected -- ", isConnected)
         }
     }
