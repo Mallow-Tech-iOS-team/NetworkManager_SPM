@@ -15,16 +15,19 @@ open class MTNetwork {
     /// Decoder required for the MTNetwork to decode the request
     public private(set) var decoder: JSONDecoder
     public private(set) var networkMonitor: NetworkMonitorProtocol
+    public private(set) var interceptor: RequestInterceptor
     
     // MARK: - Initialisers
     
     public init(session: Session,
                 requestEncoder: RequestEncoders = RequestEncoders(),
                 decoder: JSONDecoder = JSONDecoder(),
+                interceptor: RequestInterceptor,
                 networkMonitor: some NetworkMonitorProtocol = NetworkMonitor.shared) {
         self.session = session
         self.requestEncoder = requestEncoder
         self.decoder = decoder
+        self.interceptor = interceptor
         self.networkMonitor = networkMonitor
         
         networkMonitor.startMonitoring()
@@ -38,6 +41,7 @@ open class MTNetwork {
 
     public func request(_ router: Routable,
                         parameters: Parameters? = nil,
+                        interceptor: RequestInterceptor? = nil,
                         redirectHandler: RedirectHandler = .follow) -> DataRequest {
         let route = router.route
         // Using URLEncoding for GET request and JSONEncoding for other requests
@@ -47,13 +51,15 @@ open class MTNetwork {
                      method: route.method,
                      parameters: parameters,
                      encoding: route.encoding ?? encoder,
-                     headers: route.headers)
+                     headers: route.headers,
+                     interceptor: interceptor ?? self.interceptor)
             .validate()
             .redirect(using: redirectHandler)
     }
     
     public func request(_ router: Routable,
                         parameters: some Encodable,
+                        interceptor: RequestInterceptor? = nil,
                         redirectHandler: RedirectHandler = .follow) -> DataRequest {
         let route = router.route
         // Using URLEncoder for GET request and JSONEncoder for other requests
@@ -63,7 +69,8 @@ open class MTNetwork {
                      method: route.method,
                      parameters: parameters,
                      encoder: route.encoder ?? encoder,
-                     headers: route.headers)
+                     headers: route.headers,
+                     interceptor: interceptor ?? self.interceptor)
             .validate()
             .redirect(using: redirectHandler)
     }
