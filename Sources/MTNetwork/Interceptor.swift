@@ -22,7 +22,9 @@ public protocol InterceptorProtocol: AnyObject {
 public class MTInterceptor: RequestInterceptor {
     public private(set) var isTokenRefreshing: Bool = false
     public let retryLimit: Int
-    public let retryStatusCodes: Set<Int>
+    public let retryHTTPStatusCodes: Set<Int>
+    public let retryURLErrorCodes: Set<URLError.Code>
+    public let retryHTTPMethods: Set<HTTPMethod>
     public let delayTime: TimeInterval
     
     public var delegate: InterceptorProtocol
@@ -30,11 +32,15 @@ public class MTInterceptor: RequestInterceptor {
     // MARK: - Initialisers
     
     public init(retryLimit: Int = 3, // Default retry limit is 3
-                retryStatusCodes: Set<Int> = [], // Default retry status code is []
+                retryHTTPStatusCodes: Set<Int> = RetryPolicy.defaultRetryableHTTPStatusCodes,
+                retryURLErrorCodes: Set<URLError.Code> = RetryPolicy.defaultRetryableURLErrorCodes,
+                retryHTTPMethods: Set<HTTPMethod> = RetryPolicy.defaultRetryableHTTPMethods,
                 delayTime: TimeInterval = 2, // Default retry delay time is 2
                 delegate: InterceptorProtocol) {
         self.retryLimit = retryLimit
-        self.retryStatusCodes = retryStatusCodes
+        self.retryHTTPStatusCodes = retryHTTPStatusCodes
+        self.retryURLErrorCodes = retryURLErrorCodes
+        self.retryHTTPMethods = retryHTTPMethods
         self.delayTime = delayTime
         self.delegate = delegate
     }
@@ -61,7 +67,11 @@ public class MTInterceptor: RequestInterceptor {
         // Some of the logics in shouldRetry->handleRetryRequests->handleTokenFailure->delegate.refreshTokens
         // is expected to be executed in main thread
         Task { @MainActor in
-            let shouldRetry = await shouldRetry(request)
+            guard request.retryCount < retryLimit else {
+                completion(.doNotRetry)
+                return
+            }
+            let shouldRetry = await shouldRetry(request, dueTo: error)
             completion(shouldRetry)
         }
     }
@@ -69,19 +79,32 @@ public class MTInterceptor: RequestInterceptor {
 
 extension MTInterceptor {
     // MARK: - Custom Methods
-    func shouldRetry(_ request: Request) async -> RetryResult {
-        guard let statusCode = request.response?.statusCode,
-              request.retryCount < retryLimit else {
-            return .doNotRetry
-        }
+    func shouldRetry(_ request: Request, dueTo error: Error) async -> RetryResult {
+        let statusCode = request.response?.statusCode
         
-        if delegate.tokenRefreshHttpsCodes.contains(statusCode) {
-            return await handleTokenFailure()
-        } else if retryStatusCodes.contains(statusCode) {
-            return .retry
+        if let statusCode {
+            if delegate.tokenRefreshHttpsCodes.contains(statusCode) {
+                return await handleTokenFailure()
+            } else if retryHTTPStatusCodes.contains(statusCode) {
+                return .retry
+            } else {
+                return .doNotRetry
+            }
         } else {
-            return .doNotRetry
+            guard let httpMethod = request.request?.method, retryHTTPMethods.contains(httpMethod)
+            else { return .doNotRetry }
+            
+            return shouldRetry(for: error)
         }
+    }
+    
+    func shouldRetry(for error: Error) -> RetryResult {
+        let errorCode = (error as? URLError)?.code
+        let afErrorCode = (error.asAFError?.underlyingError as? URLError)?.code
+        
+        guard let code = errorCode ?? afErrorCode else { return .doNotRetry }
+        
+        return retryURLErrorCodes.contains(code) ? .retry : .doNotRetry
     }
     
     func commonHeaders() -> HTTPHeaders {
